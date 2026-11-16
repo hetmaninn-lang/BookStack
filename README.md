@@ -4,8 +4,8 @@ A QA process designed, executed and maintained against [BookStack](https://www.b
 an open-source documentation platform. This repository holds the QA work only; it is not a fork of
 BookStack.
 
-> Status: test environment and pipeline in place, three login smoke checks passing locally against
-> BookStack v26.09.3. Product discovery is in progress — see
+> Status: test environment and pipeline in place, eight smoke checks (login per role, REST API
+> authentication) passing against BookStack v26.09.3 with seeded users and content. Product discovery is in progress — see
 > [docs/01-product-overview.md](docs/01-product-overview.md). No findings to report yet.
 
 ## Repository layout

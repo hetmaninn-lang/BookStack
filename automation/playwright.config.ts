@@ -1,17 +1,11 @@
-import { existsSync } from 'node:fs';
-import path from 'node:path';
 import { defineConfig, devices } from '@playwright/test';
-
-// Local runs read the same .env file that Docker Compose uses.
-const envFile = path.resolve(__dirname, '..', '.env');
-if (existsSync(envFile)) {
-  process.loadEnvFile(envFile);
-}
+import { baseURL } from './support/env';
 
 const isCI = !!process.env.CI;
 
 export default defineConfig({
   testDir: './tests',
+  globalSetup: './global-setup.ts',
   fullyParallel: true,
   forbidOnly: isCI,
   retries: isCI ? 1 : 0,
@@ -19,7 +13,7 @@ export default defineConfig({
     ? [['github'], ['html', { open: 'never' }], ['junit', { outputFile: 'test-results/junit.xml' }]]
     : [['list'], ['html', { open: 'never' }]],
   use: {
-    baseURL: process.env.BOOKSTACK_URL ?? 'http://localhost:6875',
+    baseURL,
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
   },

@@ -1,14 +1,8 @@
 import { expect, test } from '@playwright/test';
-
-const adminEmail = process.env.BOOKSTACK_ADMIN_EMAIL ?? '';
-const adminPassword = process.env.BOOKSTACK_ADMIN_PASSWORD ?? '';
+import { accounts } from '../../support/env';
+import { logIn, readSeed } from '../../support/session';
 
 test.describe('Authentication @smoke', () => {
-  test.beforeAll(() => {
-    expect(adminEmail, 'BOOKSTACK_ADMIN_EMAIL must be set (see .env.example)').not.toBe('');
-    expect(adminPassword, 'BOOKSTACK_ADMIN_PASSWORD must be set (see .env.example)').not.toBe('');
-  });
-
   test('login page is reachable', async ({ page }) => {
     const response = await page.goto('/login');
 
@@ -17,21 +11,20 @@ test.describe('Authentication @smoke', () => {
     await expect(page.locator('input[name="password"]')).toBeVisible();
   });
 
-  test('administrator can log in with valid credentials', async ({ page }) => {
-    await page.goto('/login');
-    await page.locator('input[name="email"]').fill(adminEmail);
-    await page.locator('input[name="password"]').fill(adminPassword);
-    await page.locator('input[name="password"]').press('Enter');
+  for (const role of ['admin', 'editor', 'viewer'] as const) {
+    test(`${role} can log in and open seeded content`, async ({ page }) => {
+      const seed = readSeed();
 
-    await expect(page).not.toHaveURL(/\/login/);
-    await expect(page.locator('input[name="password"]')).toHaveCount(0);
-  });
+      await logIn(page, accounts[role]);
+      await expect(page).not.toHaveURL(/\/login/);
+
+      await page.goto(`/books/${seed.book.slug}`);
+      await expect(page.getByRole('heading', { level: 1, name: seed.book.name })).toBeVisible();
+    });
+  }
 
   test('login is rejected with an invalid password', async ({ page }) => {
-    await page.goto('/login');
-    await page.locator('input[name="email"]').fill(adminEmail);
-    await page.locator('input[name="password"]').fill(`${adminPassword}-wrong`);
-    await page.locator('input[name="password"]').press('Enter');
+    await logIn(page, { ...accounts.admin, password: `${accounts.admin.password}-wrong` });
 
     await expect(page).toHaveURL(/\/login/);
     await expect(page.locator('input[name="password"]')).toBeVisible();

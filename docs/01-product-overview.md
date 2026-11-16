@@ -8,7 +8,7 @@ from documentation alone. Items not yet examined are listed at the end.
 | System under test | BookStack v26.09.3 (`lscr.io/linuxserver/bookstack:version-v26.09.3`) |
 | Database | MariaDB 11 |
 | Environment | Docker Compose, `http://localhost:6875`, fresh install with no content |
-| Explored as | Default administrator account |
+| Explored as | Administrator, Editor, Viewer and not-logged-in visitor |
 
 ## Content model
 
@@ -75,6 +75,39 @@ Built-in documentation at `/api/docs`. Resource groups: Pages, Chapters, Books, 
 Attachments, Audit-Log, Comments, Content-Permissions, Image-Gallery, Imports, Recycle-Bin, Roles,
 Search, System, Tags, Users. Access is gated by the "Access system API" role permission.
 
+## Observed behaviour by role
+
+Probed by requesting each URL directly as a not-logged-in visitor (Guest), the seeded Viewer and
+the seeded Editor, with default role permissions and default settings.
+
+| Area | Guest | Viewer | Editor |
+| --- | --- | --- | --- |
+| Home, book, page, shelves, tags, search | Redirect to login | Allowed | Allowed |
+| Page revisions list | Redirect to login | Allowed | Allowed |
+| Export book (HTML, PDF, text, Markdown, ZIP) | Redirect to login | Allowed | Allowed |
+| Create book / chapter / page | Redirect to login | Redirect to home | Allowed |
+| Edit book / page | Redirect to login | Redirect to home or page | Allowed |
+| Delete book (confirmation page) | Redirect to login | Redirect to home | Allowed |
+| Book permissions | Redirect to login | Redirect to home | Redirect to home |
+| Settings, users, roles, audit log, recycle bin, maintenance | Redirect to login | Redirect to home | Redirect to home |
+| Other users' profile page | Redirect to login | Allowed | Allowed |
+| API documentation page | Redirect to login | Allowed | Allowed |
+| API requests using the browser session | 403 | 403 | 403 |
+| "Create Token" on own account | — | Not offered | Not offered |
+
+What this tells us about how to test:
+
+- **Public access is off by default.** A visitor who is not logged in is sent to the login page for
+  every content and settings URL.
+- **Denied UI requests redirect instead of returning an error status.** The final response is
+  200 on the home page, so access-control checks must assert on the redirect and on the absence of
+  the content, never on the HTTP status alone.
+- **The API distinguishes two denial cases.** A request with no credentials at all returns 401; a
+  request carrying a browser session without the "Access system API" permission returns 403.
+- **Viewers and Editors can read the API documentation** although they cannot call the API.
+  Probably intended; to confirm against the product documentation.
+- **Editors can delete any book by default** but cannot change its permissions.
+
 ## Early risk observations
 
 To be assessed properly in the risk assessment; listed here so they are not lost.
@@ -89,8 +122,9 @@ To be assessed properly in the risk assessment; listed here so they are not lost
 
 ## Not yet examined
 
-- Behaviour as Editor, Viewer and Guest (no such users or content exist yet)
-- Default state of public access and registration
+- State-changing requests as a restricted role (only page loads were probed, not form submissions)
+- Content-level permission overrides, Own vs All scopes, and users holding several roles
+- Behaviour with public access enabled; default state of registration
 - Page editor, revisions, attachments, search, export/import, recycle bin
 - Multi-factor authentication, webhooks, audit log contents
 - API authentication (tokens) and rate limiting
