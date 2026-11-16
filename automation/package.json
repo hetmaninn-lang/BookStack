@@ -1,0 +1,16 @@
+{
+  "name": "bookstack-qa-automation",
+  "private": true,
+  "description": "Automated checks for the BookStack QA portfolio",
+  "scripts": {
+    "test": "playwright test",
+    "test:smoke": "playwright test --grep @smoke",
+    "typecheck": "tsc --noEmit",
+    "report": "playwright show-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.65.1",
+    "@types/node": "^26.6.6",
+    "typescript": "^7.0.2"
+  }
+}

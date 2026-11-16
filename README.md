@@ -1,0 +1,39 @@
+# BookStack — QA Engineering Portfolio
+
+A QA process designed, executed and maintained against [BookStack](https://www.bookstackapp.com/),
+an open-source documentation platform. This repository holds the QA work only; it is not a fork of
+BookStack.
+
+> Status: test environment and pipeline in place, three login smoke checks passing locally against
+> BookStack v26.09.3. Product discovery is in progress — see
+> [docs/01-product-overview.md](docs/01-product-overview.md). No findings to report yet.
+
+## Repository layout
+
+| Path | Contents |
+| --- | --- |
+| `docker-compose.yml` | Disposable BookStack + MariaDB test environment |
+| `automation/` | Playwright (TypeScript) automated checks |
+| `.github/workflows/qa-pipeline.yml` | CI: starts BookStack, runs the automated checks, uploads the report |
+| `docs/` | QA documents, starting with the product overview from discovery |
+
+Planned, added as the work is actually done: strategy, test plan, risk assessment, traceability and
+summary report in `docs/`, plus `test-cases/` and `bug-reports/`.
+
+## Run it locally
+
+Requires Docker Desktop and Node.js 22+.
+
+```bash
+cp .env.example .env
+docker compose up -d
+cd automation
+npm ci
+npx playwright install chromium
+npm test
+```
+
+BookStack is then available at <http://localhost:6875>. To reset to a clean state:
+`docker compose down -v`.
+
+All credentials in `.env.example` are test values for the disposable instance.
