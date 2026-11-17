@@ -22,6 +22,7 @@ export interface Account {
 }
 
 export const baseURL = process.env.BOOKSTACK_URL ?? 'http://localhost:6875';
+export const mailpitURL = process.env.MAILPIT_URL ?? 'http://localhost:8025';
 
 export const accounts = {
   admin: {

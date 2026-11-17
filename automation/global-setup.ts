@@ -1,4 +1,6 @@
+import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import path from 'node:path';
 import { type APIRequestContext, chromium, request } from '@playwright/test';
 import { type Account, accounts, baseURL, paths } from './support/env';
 import { type ApiToken, type SeedData, apiAuthHeader, logIn, readApiToken } from './support/session';
@@ -13,6 +15,7 @@ import { type ApiToken, type SeedData, apiAuthHeader, logIn, readApiToken } from
  */
 export default async function globalSetup(): Promise<void> {
   mkdirSync(paths.authDir, { recursive: true });
+  resetRateLimits();
 
   const token = (await reuseExistingToken()) ?? (await createTokenThroughUi());
   writeFileSync(paths.apiToken, JSON.stringify(token, null, 2));
@@ -23,6 +26,29 @@ export default async function globalSetup(): Promise<void> {
     writeFileSync(paths.seed, JSON.stringify(seed, null, 2));
   } finally {
     await api.dispose();
+  }
+}
+
+/**
+ * BookStack keeps login and password-reset rate-limit counters in its cache. Clearing the cache
+ * on the local Docker instance lets the suite be rerun within the same minute. Set
+ * RESET_RATE_LIMITS=false when testing an environment that is not this Docker Compose setup.
+ */
+function resetRateLimits(): void {
+  if (process.env.RESET_RATE_LIMITS === 'false') {
+    return;
+  }
+  try {
+    execFileSync(
+      process.env.DOCKER_BIN ?? 'docker',
+      ['compose', 'exec', '-T', 'bookstack', 'php', '/app/www/artisan', 'cache:clear'],
+      { cwd: path.resolve(__dirname, '..'), stdio: 'pipe' },
+    );
+  } catch (error) {
+    console.warn(
+      'Could not reset BookStack rate limits; password reset and login throttling tests may fail ' +
+        `if the suite ran in the last minute. ${(error as Error).message.split('\n')[0]}`,
+    );
   }
 }
 

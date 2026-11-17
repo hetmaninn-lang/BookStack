@@ -108,6 +108,19 @@ What this tells us about how to test:
   Probably intended; to confirm against the product documentation.
 - **Editors can delete any book by default** but cannot change its permissions.
 
+## Authentication protections
+
+Observed with outgoing mail captured by Mailpit (the test environment's mail catcher).
+
+| Behaviour | Observed |
+| --- | --- |
+| Reset request for a registered email | Message "A password reset link will be sent to … if that email address is found in the system."; email "Reset your BookStack password" arrives |
+| Reset request for an unknown email | Same message; no email sent |
+| Reset link used a second time | Rejected: "The password reset token is invalid for this email address." |
+| Reset request rate | 10 per minute per client, shared between requesting a link and setting a password; then 429 with a Retry-After header |
+| Failed logins, same account | Locked for about a minute after 5 failures; the correct password is also refused while locked |
+| Failed logins, different accounts | 15 consecutive failures across different emails from one client were not throttled |
+
 ## Early risk observations
 
 To be assessed properly in the risk assessment; listed here so they are not lost.

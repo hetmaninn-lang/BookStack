@@ -8,6 +8,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      mailpit:
+        condition: service_started
     environment:
       PUID: 1000
       PGID: 1000
@@ -19,10 +21,25 @@ services:
       DB_DATABASE: ${DB_DATABASE}
       DB_USERNAME: ${DB_USERNAME}
       DB_PASSWORD: ${DB_PASSWORD}
+      # All outgoing mail goes to Mailpit; nothing leaves the test environment.
+      MAIL_DRIVER: smtp
+      MAIL_HOST: mailpit
+      MAIL_PORT: 1025
+      MAIL_ENCRYPTION: "null"
+      MAIL_USERNAME: "null"
+      MAIL_PASSWORD: "null"
+      MAIL_FROM: bookstack@example.test
+      MAIL_FROM_NAME: BookStack QA
     ports:
       - "${BOOKSTACK_PORT}:80"
     volumes:
       - bookstack_config:/config
+
+  # Mail catcher: inbox UI and API at http://localhost:${MAILPIT_PORT}
+  mailpit:
+    image: axllent/mailpit:v1.34.0
+    ports:
+      - "${MAILPIT_PORT}:8025"
 
   db:
     image: mariadb:11
